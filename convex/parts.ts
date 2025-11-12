@@ -23,3 +23,22 @@ export const remove = mutation({
         return ctx.db.delete(args.id);
     }
 })
+
+export const update = mutation({
+    args: {
+    id: v.id('parts'), status: v.optional(v.union(v.literal('Owned'), v.literal('Unowned'))), name: v.optional(v.string()), cost: v.optional(v.number()),
+    quantity: v.optional(v.number())
+  },
+    handler: (ctx, args) => {
+      const {id, ...rest} = args
+      return ctx.db.patch(args.id, rest)
+    }
+})
+
+
+export const getById = query({
+    args: {id: v.id('parts')},
+    handler: async (ctx, args) => {
+      return ctx.db.get(args.id)
+  }
+})

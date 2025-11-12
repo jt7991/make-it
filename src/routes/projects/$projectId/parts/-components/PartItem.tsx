@@ -1,24 +1,100 @@
+import { Link } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
 import type { Doc } from "convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import {
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
+	ChevronDownIcon,
+	EllipsisVerticalIcon,
+	PencilIcon,
+	PlusIcon,
+	SparklesIcon,
+	TrashIcon,
+} from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { TableCell, TableRow } from "@/components/ui/table";
 
-export function PartItem({ part }: { part?: Doc<"parts"> }) {
-	const deletePart = useMutation(api.parts.remove);
+export function PartItem({ part }: { part: Doc<"parts"> }) {
+	const [isOpen, setIsOpen] = useState(false);
+	const updatePart = useMutation(api.parts.update);
+
 	return (
-		<AccordionItem value={part?._id || ""} className="border-0">
-			<AccordionTrigger className="grid grid-cols-[1fr_60px_100px_60px_60px_10px] gap-2 hover:no-underline">
-				<h2 className="text-left">{part?.name}</h2>
-				<h2>{part?.quantity}</h2>
-				<h2>$ {part?.cost}</h2>
-				<h2>{part?.status === "Owned" ? "Yes" : "No"}</h2>
-				<div />
-			</AccordionTrigger>
-			<AccordionContent>{/* Content will be added later */}</AccordionContent>
-		</AccordionItem>
+		<>
+			<TableRow className="hover:bg-muted/50">
+				<TableCell
+					className="text-center cursor-pointer w-15"
+					onClick={() => setIsOpen(!isOpen)}
+				>
+					<ChevronDownIcon
+						className={`h-4 w-4 transition-transform duration-200 ${
+							isOpen ? "rotate-180" : ""
+						}`}
+					/>
+				</TableCell>
+				<TableCell>{part?.name}</TableCell>
+				<TableCell>{part?.quantity}</TableCell>
+				<TableCell>$ {part?.cost}</TableCell>
+				<TableCell>
+					<Checkbox
+						checked={part?.status === "Owned"}
+						onCheckedChange={(checked) =>
+							updatePart({
+								id: part._id,
+								status: checked ? "Owned" : "Unowned",
+							})
+						}
+					/>
+				</TableCell>
+				<TableCell className="text-center">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="link">
+								<EllipsisVerticalIcon size={16} />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuItem asChild>
+								<Link
+									to="."
+									from="/projects/$projectId/parts"
+									search={{ editPart: part._id }}
+								>
+									<PencilIcon size={16} /> Edit
+								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuItem asChild>
+								<Link
+									className="text-destructive hover:text-destructive!"
+									to="."
+									from="/projects/$projectId/parts"
+									search={{ deletePart: part._id }}
+								>
+									<TrashIcon size={14} className="text-destructive" /> Delete
+								</Link>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</TableCell>
+			</TableRow>
+			{isOpen && (
+				<TableRow>
+					<TableCell colSpan={6} className="bg-muted/20 p-4">
+						<h1 className="text-xl"> Options </h1>
+						<Button>
+							<PlusIcon />
+							Generate Suggestions
+						</Button>
+					</TableCell>
+				</TableRow>
+			)}
+		</>
 	);
 }

@@ -1,15 +1,23 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import type { Id } from "convex/_generated/dataModel";
+import { useQuery } from "convex/react";
 import { CheckCircleIcon, CheckIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import z from "zod";
-import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { Route as projectRoute } from "../../$projectId/route";
+import { DeletePartConfirm } from "./-components/DeletePartConfirm";
 import { NewPartDialog } from "./-components/NewPartDialog";
 import { PartItem } from "./-components/PartItem";
 
@@ -23,12 +31,24 @@ export const Route = createFileRoute("/projects/$projectId/parts/")({
 		);
 	},
 	validateSearch: (params) => {
-		if (params.newPart) {
-			return {
-				newPart: true,
-			};
-		}
-		return params;
+		const schema = z.object({
+			newPart: z
+				.boolean()
+				.transform((val) => (val ? val : undefined))
+				.optional()
+				.catch(undefined),
+			editPart: z
+				.string()
+				.transform((val) => (val ? (val as Id<"parts">) : undefined))
+				.optional()
+				.catch(undefined),
+			deletePart: z
+				.string()
+				.transform((val) => (val ? (val as Id<"parts">) : undefined))
+				.optional()
+				.catch(undefined),
+		});
+		return schema.parse(params);
 	},
 });
 
@@ -44,31 +64,50 @@ export const partFormSchema = z.object({
 
 function RouteComponent() {
 	const { project } = projectRoute.useLoaderData();
-	const { newPart } = Route.useSearch();
+	const { newPart, editPart, deletePart } = Route.useSearch();
 
 	const parts = useQuery(api.parts.getByProjectId, { projectId: project._id });
+	const partToEdit = useQuery(
+		api.parts.getById,
+		editPart ? { id: editPart } : "skip",
+	);
+
+	const partToDelete = useQuery(
+		api.parts.getById,
+		deletePart ? { id: deletePart } : "skip",
+	);
 
 	return (
 		<>
-			<NewPartDialog isOpen={Boolean(newPart)} />
-			<div className="flex flex-col gap-2">
-				<div className="grid grid-cols-[1fr_60px_100px_60px_60px_10px] gap-2">
-					<h1 className="font-bold"> Name </h1>
-					<h1 className="font-bold"> Qty. </h1>
-					<h1 className="font-bold"> Cost </h1>
-					<h1 className="font-bold"> Owned </h1>
-					<p />
-				</div>
-				<Accordion type="multiple">
-					{parts?.map((part) => {
-						return <PartItem key={part._id} part={part} />;
-					})}
-				</Accordion>
-				<Link to="." search={{ newPart: true }}>
+			<DeletePartConfirm part={partToDelete || undefined} />
+			<NewPartDialog
+				key={partToEdit?._id || "new_part"}
+				isOpen={Boolean(newPart) || Boolean(partToEdit)}
+				part={partToEdit || undefined}
+			/>
+			<div className="flex flex-col gap-4">
+				<Link to="." search={{ newPart: true }} className="self-end">
 					<Button className="w-fit">
 						<PlusIcon /> New Part
 					</Button>
 				</Link>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead className="w-8"></TableHead>
+							<TableHead>Name</TableHead>
+							<TableHead>Qty.</TableHead>
+							<TableHead>Cost</TableHead>
+							<TableHead>Owned</TableHead>
+							<TableHead></TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{parts?.map((part) => {
+							return <PartItem key={part._id} part={part} />;
+						})}
+					</TableBody>
+				</Table>
 			</div>
 		</>
 	);

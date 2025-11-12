@@ -1,7 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { skipToken } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
-import { useMutation } from "convex/react";
+import type { Doc, Id } from "convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
 import { DollarSignIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import z from "zod";
@@ -37,25 +39,46 @@ const formSchema = z.object({
 	quantity: z.coerce.number().min(0),
 });
 
-export const NewPartDialog = ({ isOpen }: { isOpen: boolean }) => {
+export const NewPartDialog = ({
+	isOpen,
+	part,
+}: {
+	isOpen: boolean;
+	part?: Doc<"parts">;
+}) => {
 	const navigate = useNavigate();
 	const { projectId } = projectRoute.useParams();
 	const form = useForm({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			name: "",
-			cost: "0",
-			quantity: "1",
-		},
+		defaultValues: part
+			? {
+					name: part.name,
+					cost: `${part.cost}`,
+					quantity: `${part.quantity}`,
+				}
+			: {
+					name: "",
+					cost: "0",
+					quantity: "1",
+				},
 	});
 
 	const createPart = useMutation(api.parts.create);
+	const updatePart = useMutation(api.parts.update);
+
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
-		await createPart({
-			projectId,
-			...values,
-			status: "Unowned",
-		});
+		if (part?._id) {
+			await updatePart({
+				id: part?._id,
+				...values,
+			});
+		} else {
+			await createPart({
+				projectId,
+				...values,
+				status: "Unowned",
+			});
+		}
 		return navigate({
 			to: ".",
 			search: {},
