@@ -10,6 +10,7 @@
 
 import type * as parts from "../parts.js";
 import type * as projects from "../projects.js";
+import type * as sources from "../sources.js";
 
 import type {
   ApiFromModules,
@@ -28,6 +29,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   parts: typeof parts;
   projects: typeof projects;
+  sources: typeof sources;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

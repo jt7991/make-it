@@ -1,3 +1,4 @@
+import { convexQuery } from "@convex-dev/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
@@ -11,6 +12,11 @@ import {
 
 export const Route = createFileRoute("/projects/")({
 	component: ProjectsPage,
+	loader: (opts) => {
+		return opts.context.queryClient.ensureQueryData(
+			convexQuery(api.projects.list, {}),
+		);
+	},
 });
 
 function ProjectsPage() {

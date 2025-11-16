@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { WrenchIcon } from "lucide-react";
 import type * as React from "react";
 import { NavUser } from "@/components/nav-user";
-import { ProjectSwitcher } from "@/components/team-switcher";
+import { ProjectSwitcher } from "@/components/project-switcher";
 import {
 	Sidebar,
 	SidebarContent,

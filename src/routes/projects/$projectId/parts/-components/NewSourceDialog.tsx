@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
-import type { Doc } from "convex/_generated/dataModel";
+import type { Doc, Id } from "convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useForm } from "react-hook-form";
 import z from "zod";
@@ -29,52 +29,64 @@ import {
 	InputGroupInput,
 	InputGroupText,
 } from "@/components/ui/input-group.tsx";
-import { Route as projectRoute } from "../../route.tsx";
+import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
-	name: z.string().min(1, "Invalid"),
-	cost: z.coerce.number().min(0, "Invalid"),
-	quantity: z.coerce.number().min(0),
+	title: z.string().min(1, "Invalid"),
+	description: z.string().min(0, "Invalid"),
+	price: z.coerce.number().min(0, "Invalid").optional(),
+	link: z.string().optional(),
+	imageUrl: z.string().optional(),
 });
 
-export const NewPartDialog = ({
+export const NewSourceDialog = ({
 	isOpen,
-	part,
+	source,
+	partId,
 }: {
 	isOpen: boolean;
-	part?: Doc<"parts">;
+	source?: Doc<"source">;
+	partId: Id<"parts">;
 }) => {
 	const navigate = useNavigate();
-	const { projectId } = projectRoute.useParams();
 	const form = useForm({
 		resolver: zodResolver(formSchema),
-		values: part
+		defaultValues: source
 			? {
-					name: part.name,
-					cost: `${part.cost}`,
-					quantity: `${part.quantity}`,
+					title: source.title,
+					description: source.description,
+					price: source.price ? `${source.price}` : "",
+					link: source.link || "",
+					imageUrl: source.imageUrl || "",
 				}
 			: {
-					name: "",
-					cost: "0",
-					quantity: "1",
+					description: "",
+					price: "",
+					link: "",
+					imageUrl: "",
 				},
 	});
 
-	const createPart = useMutation(api.parts.create);
-	const updatePart = useMutation(api.parts.update);
+	const createSource = useMutation(api.sources.create);
+	const updateSource = useMutation(api.sources.update);
 
 	const onSubmit = async (values: z.infer<typeof formSchema>) => {
-		if (part?._id) {
-			await updatePart({
-				id: part?._id,
-				...values,
+		const cleanedValues = {
+			...values,
+			price: values.price ? Number(values.price) : undefined,
+			link: values.link || undefined,
+			imageUrl: values.imageUrl || undefined,
+		};
+
+		if (source?._id) {
+			await updateSource({
+				id: source._id,
+				...cleanedValues,
 			});
 		} else {
-			await createPart({
-				projectId,
-				...values,
-				status: "Unowned",
+			await createSource({
+				partId,
+				...cleanedValues,
 			});
 		}
 		return navigate({
@@ -97,7 +109,7 @@ export const NewPartDialog = ({
 		>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
-					<DialogTitle>{part ? "New" : "Edit"} Part</DialogTitle>
+					<DialogTitle>New Source</DialogTitle>
 				</DialogHeader>
 				<Form {...form}>
 					<form
@@ -108,12 +120,12 @@ export const NewPartDialog = ({
 					>
 						<FormField
 							control={form.control}
-							name="name"
+							name="link"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel>Name</FormLabel>
+									<FormLabel>Link</FormLabel>
 									<FormControl>
-										<Input placeholder="6ft 2x4" {...field} />
+										<Input placeholder="https://example.com" {...field} />
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -121,10 +133,36 @@ export const NewPartDialog = ({
 						/>
 						<FormField
 							control={form.control}
-							name="cost"
+							name="title"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Title</FormLabel>
+									<FormControl>
+										<Input placeholder="Title" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="description"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Description</FormLabel>
+									<FormControl>
+										<Textarea placeholder="Description" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="price"
 							render={({ field: { value, ...field } }) => (
 								<FormItem>
-									<FormLabel>Approx. Price</FormLabel>
+									<FormLabel>Price (optional)</FormLabel>
 									<FormControl>
 										<InputGroup>
 											<InputGroupAddon>
@@ -142,15 +180,17 @@ export const NewPartDialog = ({
 								</FormItem>
 							)}
 						/>
-
 						<FormField
 							control={form.control}
-							name="quantity"
-							render={({ field: { value, ...field } }) => (
+							name="imageUrl"
+							render={({ field }) => (
 								<FormItem>
-									<FormLabel>Quantity</FormLabel>
+									<FormLabel>Image URL (optional)</FormLabel>
 									<FormControl>
-										<Input type="number" {...field} value={value as string} />
+										<Input
+											placeholder="https://example.com/image.jpg"
+											{...field}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>

@@ -19,6 +19,7 @@ import {
 import { Route as projectRoute } from "../../$projectId/route";
 import { DeletePartConfirm } from "./-components/DeletePartConfirm";
 import { NewPartDialog } from "./-components/NewPartDialog";
+import { NewSourceDialog } from "./-components/NewSourceDialog";
 import { PartItem } from "./-components/PartItem";
 
 export const Route = createFileRoute("/projects/$projectId/parts/")({
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/projects/$projectId/parts/")({
 				projectId: opts.params.projectId,
 			}),
 		);
+		return { crumb: "Parts" };
 	},
 	validateSearch: (params) => {
 		const schema = z.object({
@@ -45,6 +47,16 @@ export const Route = createFileRoute("/projects/$projectId/parts/")({
 			deletePart: z
 				.string()
 				.transform((val) => (val ? (val as Id<"parts">) : undefined))
+				.optional()
+				.catch(undefined),
+			newSourcePartId: z
+				.string()
+				.transform((val) => (val ? (val as Id<"parts">) : undefined))
+				.optional()
+				.catch(undefined),
+			editSource: z
+				.string()
+				.transform((val) => (val ? (val as Id<"source">) : undefined))
 				.optional()
 				.catch(undefined),
 		});
@@ -64,7 +76,8 @@ export const partFormSchema = z.object({
 
 function RouteComponent() {
 	const { project } = projectRoute.useLoaderData();
-	const { newPart, editPart, deletePart } = Route.useSearch();
+	const { newPart, editPart, deletePart, newSourcePartId, editSource } =
+		Route.useSearch();
 
 	const parts = useQuery(api.parts.getByProjectId, { projectId: project._id });
 	const partToEdit = useQuery(
@@ -77,6 +90,11 @@ function RouteComponent() {
 		deletePart ? { id: deletePart } : "skip",
 	);
 
+	const sourceToEdit = useQuery(
+		api.sources.getById,
+		editSource ? { id: editSource } : "skip",
+	);
+
 	return (
 		<>
 			<DeletePartConfirm part={partToDelete || undefined} />
@@ -84,6 +102,15 @@ function RouteComponent() {
 				key={partToEdit?._id || "new_part"}
 				isOpen={Boolean(newPart) || Boolean(partToEdit)}
 				part={partToEdit || undefined}
+			/>
+			<NewSourceDialog
+				key={sourceToEdit?._id || "new_source"}
+				isOpen={Boolean(newSourcePartId) || Boolean(sourceToEdit)}
+				source={sourceToEdit || undefined}
+				partId={
+					newSourcePartId ||
+					(sourceToEdit ? sourceToEdit.partId : ("" as Id<"parts">))
+				}
 			/>
 			<div className="flex flex-col gap-4">
 				<Link to="." search={{ newPart: true }} className="self-end">

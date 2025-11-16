@@ -10,6 +10,9 @@ export const Route = createFileRoute("/projects")({
 				}
 			: {};
 	},
+	loader: () => {
+		return { crumb: "Projects" };
+	},
 });
 
 function RouteComponent() {

@@ -4,14 +4,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { AppSidebar } from "@/components/app-sidebar";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Separator } from "@/components/ui/separator";
 import {
 	SidebarInset,
@@ -35,7 +28,7 @@ export const Route = createFileRoute("/projects/$projectId")({
 				}),
 			);
 			if (data) {
-				return { project: data };
+				return { project: data, crumb: data.name };
 			}
 		} catch (e) {}
 		throw redirect({ to: "/projects" });
@@ -54,19 +47,7 @@ export default function Page() {
 							orientation="vertical"
 							className="mr-2 data-[orientation=vertical]:h-4"
 						/>
-						<Breadcrumb>
-							<BreadcrumbList>
-								<BreadcrumbItem className="hidden md:block">
-									<BreadcrumbLink href="#">
-										Building Your Application
-									</BreadcrumbLink>
-								</BreadcrumbItem>
-								<BreadcrumbSeparator className="hidden md:block" />
-								<BreadcrumbItem>
-									<BreadcrumbPage>Data Fetching</BreadcrumbPage>
-								</BreadcrumbItem>
-							</BreadcrumbList>
-						</Breadcrumb>
+						<Breadcrumbs />
 					</div>
 				</header>
 				<div className="p-4 pt-0">
